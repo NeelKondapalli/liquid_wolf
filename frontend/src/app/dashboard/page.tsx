@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { isAuthenticated, clearToken, getToken } from "@/lib/auth";
+import { isAuthenticated, clearToken, getPhone } from "@/lib/auth";
 import { api } from "@/lib/api";
 import type { AccountSummary as AccountSummaryType, Call, Signal, User } from "@/lib/types";
 import { AccountSummary } from "@/components/dashboard/AccountSummary";

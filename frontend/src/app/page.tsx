@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { isAuthenticated } from "@/lib/auth";
+import { isAuthenticated, setPhone, getPhone } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { characters } from "@/lib/characters";
 import { AsciiCanvas } from "@/components/landing/AsciiCanvas";
@@ -245,7 +245,7 @@ function Step0({ onDone }: { onDone: (phone: string) => void }) {
 }
 
 // ─── Step 1: Connect Liquid ─────────────────────────────────────────
-function Step1({ onDone }: { onDone: () => void }) {
+function Step1({ phone, onDone }: { phone: string; onDone: () => void }) {
   const [apiKey, setApiKey] = useState("");
   const [apiSecret, setApiSecret] = useState("");
   const [loading, setLoading] = useState(false);
@@ -257,7 +257,7 @@ function Step1({ onDone }: { onDone: () => void }) {
     setError("");
     setLoading(true);
     try {
-      await api.saveKeys(apiKey, apiSecret);
+      await api.saveKeys(phone, apiKey, apiSecret);
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save keys");
@@ -291,13 +291,18 @@ function Step1({ onDone }: { onDone: () => void }) {
             <ol className="list-decimal list-inside space-y-1">
               <li>
                 Sign up at{" "}
-                <a href="https://app.liquid.com" target="_blank" rel="noopener noreferrer" className="text-[#ccc] hover:underline inline-flex items-center gap-0.5">
-                  app.liquid.com <ExternalLink className="w-2.5 h-2.5" />
+                <a href="https://app.tryliquid.xyz" target="_blank" rel="noopener noreferrer" className="text-[#ccc] hover:underline inline-flex items-center gap-0.5">
+                  app.tryliquid.xyz <ExternalLink className="w-2.5 h-2.5" />
+                </a>
+                {" "}(Google, email, or wallet)
+              </li>
+              <li>Deposit funds into <span className="text-[#999]">Perps</span></li>
+              <li>Go to{" "}
+                <a href="https://app.tryliquid.xyz/account/api-keys" target="_blank" rel="noopener noreferrer" className="text-[#ccc] hover:underline inline-flex items-center gap-0.5">
+                  Account &rarr; API Keys <ExternalLink className="w-2.5 h-2.5" />
                 </a>
               </li>
-              <li>Go to <span className="text-[#999]">Settings &rarr; API Tokens</span></li>
-              <li>Click <span className="text-[#999]">Create API Token</span></li>
-              <li>Enable <span className="text-[#999]">Trading</span> permissions, copy both values</li>
+              <li>Create a key, copy <span className="text-[#999]">API Key</span> and <span className="text-[#999]">Secret</span></li>
             </ol>
           </div>
         )}
@@ -450,15 +455,28 @@ export default function LandingPage() {
 
       {/* Content layer — pointer-events-none so mouse passes through to ASCII canvas */}
       <div className="relative z-10 min-h-screen flex flex-col pointer-events-none">
-        {/* Main content — pushed below center to avoid video bright areas at top */}
-        <div className="flex-1 flex items-end justify-center px-5 sm:px-8 pb-16 sm:pb-24 pt-10 sm:pt-16">
+        {/* Top-left logo */}
+        <div className="fixed top-4 left-4 sm:top-5 sm:left-6 z-20">
+          <div
+            className="px-4 py-2 rounded-xl pointer-events-auto"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+            }}
+          >
+            <span className="font-mono-num text-[13px] font-semibold text-white tracking-[0.15em] uppercase">
+              PITCH
+            </span>
+          </div>
+        </div>
+
+        {/* Main content — slightly below vertical center to avoid video overlap */}
+        <div className="flex-1 flex items-center justify-center px-5 sm:px-8 pt-16 sm:pt-24">
           <div className="w-full max-w-[960px] flex flex-col lg:flex-row items-center lg:items-center gap-10 sm:gap-12 lg:gap-24">
 
             {/* Left — hero copy */}
             <div className="flex-1 max-w-[460px] text-center lg:text-left">
-              <p className="font-mono-num text-[11px] text-[#888] tracking-[0.2em] uppercase mb-5 sm:mb-6">
-                PITCH
-              </p>
               <h1 className="text-[36px] sm:text-[48px] lg:text-[56px] font-semibold leading-[1.05] text-white mb-4 sm:mb-5">
                 Your broker<br />
                 never{" "}
@@ -482,13 +500,39 @@ export default function LandingPage() {
 
               {step === 0 && (
                 <Step0
-                  onDone={(phone) => {
-                    setAuthPhone(phone);
+                  onDone={async (phone) => {
+                    // Normalize and store phone
+                    const normalized = phone.startsWith("+")
+                      ? phone
+                      : `+1${phone.replace(/\D/g, "")}`;
+                    setAuthPhone(normalized);
+                    setPhone(normalized);
+
+                    // Check/create user in backend
+                    try {
+                      const { exists } = await api.checkUserExists(normalized);
+                      if (!exists) {
+                        await api.createUser(normalized);
+                      }
+                      const { has_keys } = await api.checkUserHasKeys(normalized);
+                      if (has_keys) {
+                        // Skip key setup, go to character step
+                        setStep(2);
+                        return;
+                      }
+                    } catch {
+                      // Backend unavailable — continue with onboarding anyway
+                    }
                     setStep(1);
                   }}
                 />
               )}
-              {step === 1 && <Step1 onDone={() => setStep(2)} />}
+              {step === 1 && (
+                <Step1
+                  phone={authPhone}
+                  onDone={() => setStep(2)}
+                />
+              )}
               {step === 2 && (
                 <Step2
                   authPhone={authPhone}

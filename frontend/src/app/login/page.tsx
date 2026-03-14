@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { isAuthenticated } from "@/lib/auth";
+import { isAuthenticated, setPhone } from "@/lib/auth";
 import { api } from "@/lib/api";
 
 export default function LoginPage() {
@@ -65,6 +65,26 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await api.verifyCode(phone, fullCode);
+      const normalized = phone.startsWith("+")
+        ? phone
+        : `+1${phone.replace(/\D/g, "")}`;
+      setPhone(normalized);
+
+      // Check if user has keys — if not, send to onboarding
+      try {
+        const { exists } = await api.checkUserExists(normalized);
+        if (!exists) {
+          router.push("/");
+          return;
+        }
+        const { has_keys } = await api.checkUserHasKeys(normalized);
+        if (!has_keys) {
+          router.push("/");
+          return;
+        }
+      } catch {
+        // Backend unavailable — go to dashboard anyway
+      }
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid code");

@@ -1,5 +1,4 @@
-import { getToken, setToken } from "./auth";
-import { supabase } from "./supabase";
+import { getToken, setToken, getPhone } from "./auth";
 import type {
   User,
   AccountSummary,
@@ -16,19 +15,14 @@ import {
   delay,
 } from "./mock-data";
 
-// In production, all API calls go through /api/* which Next.js rewrites to the
-// backend (configured via server-only API_URL env var in next.config.ts).
-// No CORS needed — browser only ever talks to its own origin.
-const BASE = "/api";
 const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
 
+// ─── Legacy apiFetch (for Next.js auth routes) ─────────────────────
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const token = getToken();
-  const res = await fetch(BASE + path, {
+  const res = await fetch("/api" + path, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options?.headers,
     },
   });
@@ -39,18 +33,41 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
-// Mock state (mutable for demo interactions)
+// ─── Backend fetch (proxied through /api/v1/*) ─────────────────────
+async function backendFetch<T>(
+  path: string,
+  body: Record<string, unknown>
+): Promise<T> {
+  const res = await fetch(`/api/v1/${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Backend request failed: ${res.status}`);
+  }
+  const json = await res.json();
+  if (!json.success) {
+    throw new Error(json.error || "Backend returned failure");
+  }
+  return json.data;
+}
+
+// Mock state
 let mockSignalEnabled = true;
 
 export const api = {
+  // ─── OTP (hits our Next.js Twilio routes) ───────────────────────
   sendCode: async (phone: string): Promise<{ success: boolean }> => {
     if (USE_MOCKS) {
       await delay();
       return { success: true };
     }
-    const { error } = await supabase.auth.signInWithOtp({ phone });
-    if (error) throw new Error(error.message);
-    return { success: true };
+    return apiFetch("/auth/send-code", {
+      method: "POST",
+      body: JSON.stringify({ phone }),
+    });
   },
 
   verifyCode: async (
@@ -64,42 +81,79 @@ export const api = {
       setToken(token);
       return { access_token: token };
     }
-    const { data, error } = await supabase.auth.verifyOtp({
-      phone,
-      token: code,
-      type: "sms",
+    const data = await apiFetch<{ access_token: string }>("/auth/verify", {
+      method: "POST",
+      body: JSON.stringify({ phone, code }),
     });
-    if (error) throw new Error(error.message);
-    const accessToken = data.session?.access_token;
-    if (!accessToken) throw new Error("No session returned");
-    setToken(accessToken);
+    setToken(data.access_token);
+    return data;
+  },
 
-    // Upsert user profile in our users table
-    const userId = data.user?.id;
-    if (userId) {
-      await supabase.from("users").upsert(
-        { id: userId, phone },
-        { onConflict: "id" }
-      );
+  // ─── User management (backend) ─────────────────────────────────
+  checkUserExists: async (
+    phone: string
+  ): Promise<{ exists: boolean }> => {
+    if (USE_MOCKS) {
+      await delay();
+      return { exists: false };
     }
+    return backendFetch("user/check", { phone_number: phone });
+  },
 
-    return { access_token: accessToken };
+  createUser: async (
+    phone: string
+  ): Promise<{ created: boolean }> => {
+    if (USE_MOCKS) {
+      await delay();
+      return { created: true };
+    }
+    return backendFetch("user/create", { phone_number: phone });
+  },
+
+  checkUserHasKeys: async (
+    phone: string
+  ): Promise<{ has_keys: boolean }> => {
+    if (USE_MOCKS) {
+      await delay();
+      return { has_keys: false };
+    }
+    return backendFetch("user/has_keys", { phone_number: phone });
   },
 
   saveKeys: async (
-    liquid_api_key: string,
-    liquid_api_secret: string
-  ): Promise<{ success: boolean }> => {
+    phone: string,
+    apiKey: string,
+    apiSecret: string
+  ): Promise<{ saved: boolean }> => {
     if (USE_MOCKS) {
       await delay();
-      return { success: true };
+      return { saved: true };
     }
-    return apiFetch("/users/keys", {
-      method: "POST",
-      body: JSON.stringify({ liquid_api_key, liquid_api_secret }),
+    return backendFetch("user/save_keys", {
+      phone_number: phone,
+      api_key: apiKey,
+      api_secret: apiSecret,
     });
   },
 
+  // ─── Account (backend) ─────────────────────────────────────────
+  getAccountInfo: async (phone: string): Promise<AccountSummary> => {
+    if (USE_MOCKS) {
+      await delay();
+      return mockAccount;
+    }
+    return backendFetch("account/info", { phone_number: phone });
+  },
+
+  getPositions: async (phone: string): Promise<AccountSummary["positions"]> => {
+    if (USE_MOCKS) {
+      await delay();
+      return mockAccount.positions;
+    }
+    return backendFetch("account/positions", { phone_number: phone });
+  },
+
+  // ─── Legacy methods (still needed for mock/dashboard) ──────────
   updateMe: async (
     data: Partial<{
       first_name: string;
@@ -122,10 +176,8 @@ export const api = {
             : mockSignalEnabled,
       };
     }
-    return apiFetch("/users/me", {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    });
+    // No backend equivalent yet — deferred
+    return { ...mockUser, ...data };
   },
 
   getMe: async (): Promise<User> => {
@@ -133,15 +185,20 @@ export const api = {
       await delay();
       return { ...mockUser, signal_enabled: mockSignalEnabled };
     }
-    return apiFetch("/users/me");
+    // Derive from stored phone — no backend equivalent yet
+    const phone = getPhone() || "";
+    return {
+      id: "user",
+      first_name: "",
+      phone,
+      character_id: "belfort",
+      signal_enabled: true,
+    };
   },
 
   getAccount: async (): Promise<AccountSummary> => {
-    if (USE_MOCKS) {
-      await delay();
-      return mockAccount;
-    }
-    return apiFetch("/account/summary");
+    const phone = getPhone() || "";
+    return api.getAccountInfo(phone);
   },
 
   getCalls: async (): Promise<Call[]> => {
@@ -149,7 +206,8 @@ export const api = {
       await delay();
       return mockCalls;
     }
-    return apiFetch("/calls/history");
+    // No backend endpoint for calls yet
+    return [];
   },
 
   getCall: async (id: string): Promise<CallDetail> => {
@@ -159,7 +217,7 @@ export const api = {
       if (!detail) throw new Error("Call not found");
       return detail;
     }
-    return apiFetch("/calls/" + id);
+    throw new Error("Not implemented");
   },
 
   getSignals: async (): Promise<Signal[]> => {
@@ -167,7 +225,8 @@ export const api = {
       await delay();
       return mockSignals;
     }
-    return apiFetch("/signals/active");
+    // No backend endpoint for signals yet
+    return [];
   },
 
   triggerDemo: async (
@@ -179,9 +238,6 @@ export const api = {
       await delay();
       return { call_id: "call_demo_" + Date.now() };
     }
-    return apiFetch("/demo/trigger-call", {
-      method: "POST",
-      body: JSON.stringify({ symbol, direction, strength }),
-    });
+    return { call_id: "call_demo_" + Date.now() };
   },
 };
