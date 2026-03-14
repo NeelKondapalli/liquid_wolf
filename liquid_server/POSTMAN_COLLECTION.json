@@ -1,0 +1,495 @@
+{
+  "info": {
+    "name": "Liquid Wolf Server API",
+    "description": "Complete API collection for Liquid Wolf Server",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "your-secret-key-change-in-production",
+      "type": "string"
+    },
+    {
+      "key": "phone_number",
+      "value": "+1234567890",
+      "type": "string"
+    },
+    {
+      "key": "test_symbol",
+      "value": "BTC-PERP",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Market Data",
+      "item": [
+        {
+          "name": "Get Markets",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/market/markets",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "market", "markets"]
+            }
+          }
+        },
+        {
+          "name": "Get Ticker",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\",\n  \"symbol\": \"{{test_symbol}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/market/ticker",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "market", "ticker"]
+            }
+          }
+        },
+        {
+          "name": "Get Orderbook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\",\n  \"symbol\": \"{{test_symbol}}\",\n  \"depth\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/market/orderbook",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "market", "orderbook"]
+            }
+          }
+        },
+        {
+          "name": "Get Candles",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\",\n  \"symbol\": \"{{test_symbol}}\",\n  \"interval\": \"1h\",\n  \"limit\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/market/candles",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "market", "candles"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Account",
+      "item": [
+        {
+          "name": "Get Account Info",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/account/info",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "account", "info"]
+            }
+          }
+        },
+        {
+          "name": "Get Balances",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/account/balances",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "account", "balances"]
+            }
+          }
+        },
+        {
+          "name": "Get Positions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/account/positions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "account", "positions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Place Market Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\",\n  \"symbol\": \"{{test_symbol}}\",\n  \"side\": \"buy\",\n  \"type\": \"market\",\n  \"size\": 100.0,\n  \"leverage\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/place",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "orders", "place"]
+            }
+          }
+        },
+        {
+          "name": "Place Limit Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\",\n  \"symbol\": \"{{test_symbol}}\",\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"size\": 50.0,\n  \"price\": 50000.0,\n  \"leverage\": 3\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/place",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "orders", "place"]
+            }
+          }
+        },
+        {
+          "name": "Get Open Orders",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/open",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "orders", "open"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\",\n  \"order_id\": \"ord_abc123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "orders", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Cancel All Orders",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/cancel_all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "orders", "cancel_all"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Positions",
+      "item": [
+        {
+          "name": "Close Position",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\",\n  \"symbol\": \"{{test_symbol}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/positions/close",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "positions", "close"]
+            }
+          }
+        },
+        {
+          "name": "Set TP/SL",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\",\n  \"symbol\": \"{{test_symbol}}\",\n  \"tp\": 75000.0,\n  \"sl\": 65000.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/positions/set_tp_sl",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "positions", "set_tp_sl"]
+            }
+          }
+        },
+        {
+          "name": "Update Leverage",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\",\n  \"symbol\": \"{{test_symbol}}\",\n  \"leverage\": 10,\n  \"is_cross\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/positions/update_leverage",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "positions", "update_leverage"]
+            }
+          }
+        },
+        {
+          "name": "Update Margin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{phone_number}}\",\n  \"symbol\": \"{{test_symbol}}\",\n  \"amount\": 500.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/positions/update_margin",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "positions", "update_margin"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
