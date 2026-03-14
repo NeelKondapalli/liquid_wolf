@@ -1,0 +1,4 @@
+fish-audio-sdk
+fastapi
+uvicorn[standard]
+python-dotenv
