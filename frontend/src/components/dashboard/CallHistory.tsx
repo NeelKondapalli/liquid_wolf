@@ -7,6 +7,7 @@ import { ChevronRight } from "lucide-react";
 
 interface CallHistoryProps {
   calls: Call[];
+  loading?: boolean;
 }
 
 function timeAgo(dateStr: string): string {
@@ -37,7 +38,29 @@ const outcomeBadge: Record<string, { label: string; className: string }> = {
   },
 };
 
-export function CallHistory({ calls }: CallHistoryProps) {
+export function CallHistory({ calls, loading }: CallHistoryProps) {
+  if (loading) {
+    return (
+      <div className="bg-surface border border-surface-border rounded-lg overflow-hidden">
+        <div className="p-4 border-b border-surface-border">
+          <div className="h-4 w-24 bg-[#1a1a1a] rounded animate-pulse" />
+        </div>
+        <div className="divide-y divide-surface-border">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-3">
+              <div className="w-8 h-8 rounded-full bg-[#1a1a1a] animate-pulse" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3.5 w-20 bg-[#1a1a1a] rounded animate-pulse" />
+                <div className="h-3 w-12 bg-[#1a1a1a] rounded animate-pulse" />
+              </div>
+              <div className="h-4 w-16 bg-[#1a1a1a] rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-surface border border-surface-border rounded-lg overflow-hidden">
       <div className="p-4 border-b border-surface-border">
@@ -48,9 +71,9 @@ export function CallHistory({ calls }: CallHistoryProps) {
 
       {calls.length === 0 ? (
         <div className="p-8 text-center">
-          <p className="text-text-secondary text-sm">
-            No calls yet · Enable alerts to get started
-          </p>
+          <p className="text-[32px] mb-3 opacity-30">&#x260E;</p>
+          <p className="text-text-secondary text-sm">No calls yet</p>
+          <p className="text-[#333] text-xs mt-1">Your AI broker will call when a signal fires</p>
         </div>
       ) : (
         <div className="divide-y divide-surface-border">

@@ -5,6 +5,7 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface PositionsTableProps {
   positions: Position[];
+  loading?: boolean;
 }
 
 function formatNum(val: string, prefix = ""): string {
@@ -26,13 +27,35 @@ function pnlSign(val: string): string {
   return "$0.00";
 }
 
-export function PositionsTable({ positions }: PositionsTableProps) {
+export function PositionsTable({ positions, loading }: PositionsTableProps) {
+  if (loading) {
+    return (
+      <div className="bg-surface border border-surface-border rounded-lg overflow-hidden">
+        <div className="p-4 border-b border-surface-border">
+          <div className="h-4 w-20 bg-[#1a1a1a] rounded animate-pulse" />
+        </div>
+        <div className="divide-y divide-surface-border">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4 p-3">
+              <div className="h-4 w-20 bg-[#1a1a1a] rounded animate-pulse" />
+              <div className="h-5 w-14 bg-[#1a1a1a] rounded animate-pulse" />
+              <div className="flex-1" />
+              <div className="h-4 w-16 bg-[#1a1a1a] rounded animate-pulse" />
+              <div className="h-4 w-16 bg-[#1a1a1a] rounded animate-pulse" />
+              <div className="h-4 w-16 bg-[#1a1a1a] rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (positions.length === 0) {
     return (
       <div className="bg-surface border border-surface-border rounded-lg p-8 text-center">
-        <p className="text-text-secondary text-sm">
-          No open positions · Waiting for signals...
-        </p>
+        <p className="text-[32px] mb-3 opacity-30">&#x25CE;</p>
+        <p className="text-text-secondary text-sm">No open positions</p>
+        <p className="text-[#333] text-xs mt-1">Positions will appear here when a trade executes</p>
       </div>
     );
   }

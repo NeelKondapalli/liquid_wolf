@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const [calls, setCalls] = useState<Call[]>([]);
   const [signals, setSignals] = useState<Signal[]>([]);
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [demoMode, setDemoMode] = useState(false);
   const [incomingCall, setIncomingCall] = useState<{
     characterId: string;
@@ -43,6 +44,8 @@ export default function DashboardPage() {
       setUser(userData);
     } catch {
       // Silently fail on poll errors
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -142,8 +145,8 @@ export default function DashboardPage() {
 
         {/* Row 2: Positions + Call history */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
-          <PositionsTable positions={account?.positions ?? []} />
-          <CallHistory calls={calls} />
+          <PositionsTable positions={account?.positions ?? []} loading={loading} />
+          <CallHistory calls={calls} loading={loading} />
         </div>
 
         {/* Demo mode indicator */}

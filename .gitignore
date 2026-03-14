@@ -32,9 +32,14 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # ─── Secrets & private env files ─────────────────────────────
+# Root .env (Supabase keys, API secrets)
+.env
 # Local override files (may contain real keys)
 .env.local
 .env*.local
+
+# Claude settings (local only)
+.claude/
 
 # Python
 __pycache__/

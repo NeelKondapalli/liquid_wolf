@@ -153,7 +153,7 @@ export const api = {
     return backendFetch("account/positions", { phone_number: phone });
   },
 
-  // ─── Legacy methods (still needed for mock/dashboard) ──────────
+  // ─── User profile (backend) ────────────────────────────────────
   updateMe: async (
     data: Partial<{
       first_name: string;
@@ -176,8 +176,16 @@ export const api = {
             : mockSignalEnabled,
       };
     }
-    // No backend equivalent yet — deferred
-    return { ...mockUser, ...data };
+    const phone = getPhone() || "";
+    try {
+      return await backendFetch("user/update", {
+        phone_number: phone,
+        ...data,
+      });
+    } catch {
+      // Backend endpoint may not exist yet — return local state
+      return { ...mockUser, ...data, phone };
+    }
   },
 
   getMe: async (): Promise<User> => {
@@ -185,15 +193,19 @@ export const api = {
       await delay();
       return { ...mockUser, signal_enabled: mockSignalEnabled };
     }
-    // Derive from stored phone — no backend equivalent yet
     const phone = getPhone() || "";
-    return {
-      id: "user",
-      first_name: "",
-      phone,
-      character_id: "belfort",
-      signal_enabled: true,
-    };
+    try {
+      return await backendFetch("user/me", { phone_number: phone });
+    } catch {
+      // Backend endpoint may not exist yet — return local fallback
+      return {
+        id: "user",
+        first_name: "",
+        phone,
+        character_id: "belfort",
+        signal_enabled: true,
+      };
+    }
   },
 
   getAccount: async (): Promise<AccountSummary> => {
@@ -201,13 +213,18 @@ export const api = {
     return api.getAccountInfo(phone);
   },
 
+  // ─── Calls & signals (backend) ───────────────────────────────────
   getCalls: async (): Promise<Call[]> => {
     if (USE_MOCKS) {
       await delay();
       return mockCalls;
     }
-    // No backend endpoint for calls yet
-    return [];
+    const phone = getPhone() || "";
+    try {
+      return await backendFetch("calls/history", { phone_number: phone });
+    } catch {
+      return [];
+    }
   },
 
   getCall: async (id: string): Promise<CallDetail> => {
@@ -217,7 +234,8 @@ export const api = {
       if (!detail) throw new Error("Call not found");
       return detail;
     }
-    throw new Error("Not implemented");
+    const phone = getPhone() || "";
+    return backendFetch(`calls/${id}`, { phone_number: phone });
   },
 
   getSignals: async (): Promise<Signal[]> => {
@@ -225,8 +243,12 @@ export const api = {
       await delay();
       return mockSignals;
     }
-    // No backend endpoint for signals yet
-    return [];
+    const phone = getPhone() || "";
+    try {
+      return await backendFetch("signals/active", { phone_number: phone });
+    } catch {
+      return [];
+    }
   },
 
   triggerDemo: async (

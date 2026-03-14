@@ -418,7 +418,11 @@ function Step3({ characterId, phone }: { characterId: string; phone: string }) {
           The moment we detect a signal, your phone rings. Pick up. Say yes or no. We handle the rest.
         </p>
       </div>
-      <PrimaryButton type="button" onClick={() => router.push("/dashboard")}>
+      <PrimaryButton type="button" onClick={() => {
+        sessionStorage.removeItem("onboard_step");
+        sessionStorage.removeItem("onboard_phone");
+        router.push("/dashboard");
+      }}>
         Go to dashboard &rarr;
       </PrimaryButton>
     </div>
@@ -429,16 +433,33 @@ function Step3({ characterId, phone }: { characterId: string; phone: string }) {
 export default function LandingPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
-  const [step, setStep] = useState(0);
-  const [authPhone, setAuthPhone] = useState("");
+  const [step, _setStep] = useState(0);
+  const [authPhone, _setAuthPhone] = useState("");
   const [characterId, setCharacterId] = useState("belfort");
+
+  // Wrap setStep/setAuthPhone to persist in sessionStorage
+  function setStep(s: number) {
+    _setStep(s);
+    if (typeof window !== "undefined") sessionStorage.setItem("onboard_step", String(s));
+  }
+  function setAuthPhone(p: string) {
+    _setAuthPhone(p);
+    if (typeof window !== "undefined") sessionStorage.setItem("onboard_phone", p);
+  }
 
   useEffect(() => {
     if (isAuthenticated()) {
       router.replace("/dashboard");
-    } else {
-      setReady(true);
+      return;
     }
+    // Restore onboarding progress from sessionStorage
+    const savedStep = sessionStorage.getItem("onboard_step");
+    const savedPhone = sessionStorage.getItem("onboard_phone");
+    if (savedStep && savedPhone && parseInt(savedStep) > 0) {
+      _setStep(parseInt(savedStep));
+      _setAuthPhone(savedPhone);
+    }
+    setReady(true);
   }, [router]);
 
   if (!ready) {
@@ -471,20 +492,29 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Main content — slightly below vertical center to avoid video overlap */}
-        <div className="flex-1 flex items-center justify-center px-5 sm:px-8 pt-16 sm:pt-24">
+        {/* Main content — centered, hero text has frosted backing for contrast */}
+        <div className="flex-1 flex items-center justify-center px-5 sm:px-8">
           <div className="w-full max-w-[960px] flex flex-col lg:flex-row items-center lg:items-center gap-10 sm:gap-12 lg:gap-24">
 
-            {/* Left — hero copy */}
+            {/* Left — hero copy with frosted glass backing */}
             <div className="flex-1 max-w-[460px] text-center lg:text-left">
-              <h1 className="text-[36px] sm:text-[48px] lg:text-[56px] font-semibold leading-[1.05] text-white mb-4 sm:mb-5">
-                Your broker<br />
-                never{" "}
-                <span className="text-[#ccc]">sleeps.</span>
-              </h1>
-              <p className="text-[14px] sm:text-[15px] text-[#666] font-light leading-relaxed max-w-[380px] mx-auto lg:mx-0">
-                AI calls your phone the moment a signal fires. Approve or reject. Trade executes automatically.
-              </p>
+              <div
+                className="inline-block rounded-2xl px-6 py-5 pointer-events-auto"
+                style={{
+                  background: "rgba(10,10,10,0.75)",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                }}
+              >
+                <h1 className="text-[36px] sm:text-[48px] lg:text-[56px] font-semibold leading-[1.05] text-white mb-4 sm:mb-5">
+                  Your broker<br />
+                  never{" "}
+                  <span className="text-[#ccc]">sleeps.</span>
+                </h1>
+                <p className="text-[14px] sm:text-[15px] text-[#666] font-light leading-relaxed max-w-[380px]">
+                  AI calls your phone the moment a signal fires. Approve or reject. Trade executes automatically.
+                </p>
+              </div>
             </div>
 
             {/* Right — onboarding card */}
@@ -498,51 +528,57 @@ export default function LandingPage() {
             >
               <StepBars current={step} total={4} />
 
-              {step === 0 && (
-                <Step0
-                  onDone={async (phone) => {
-                    // Normalize and store phone
-                    const normalized = phone.startsWith("+")
-                      ? phone
-                      : `+1${phone.replace(/\D/g, "")}`;
-                    setAuthPhone(normalized);
-                    setPhone(normalized);
+              <div key={step} className="animate-step-in">
+                {step === 0 && (
+                  <Step0
+                    onDone={async (phone) => {
+                      // Normalize and store phone
+                      const normalized = phone.startsWith("+")
+                        ? phone
+                        : `+1${phone.replace(/\D/g, "")}`;
+                      setAuthPhone(normalized);
+                      setPhone(normalized);
 
-                    // Check/create user in backend
-                    try {
-                      const { exists } = await api.checkUserExists(normalized);
-                      if (!exists) {
-                        await api.createUser(normalized);
+                      // Check/create user in backend
+                      try {
+                        const { exists } = await api.checkUserExists(normalized);
+                        if (!exists) {
+                          await api.createUser(normalized);
+                        }
+                      } catch {
+                        // user/create may fail (e.g. RLS policy) — continue anyway,
+                        // save_keys will attempt to work with whatever state exists
                       }
-                      const { has_keys } = await api.checkUserHasKeys(normalized);
-                      if (has_keys) {
-                        // Skip key setup, go to character step
-                        setStep(2);
-                        return;
+                      try {
+                        const { has_keys } = await api.checkUserHasKeys(normalized);
+                        if (has_keys) {
+                          setStep(2);
+                          return;
+                        }
+                      } catch {
+                        // Backend unavailable — continue to key setup
                       }
-                    } catch {
-                      // Backend unavailable — continue with onboarding anyway
-                    }
-                    setStep(1);
-                  }}
-                />
-              )}
-              {step === 1 && (
-                <Step1
-                  phone={authPhone}
-                  onDone={() => setStep(2)}
-                />
-              )}
-              {step === 2 && (
-                <Step2
-                  authPhone={authPhone}
-                  onDone={(cid) => {
-                    setCharacterId(cid);
-                    setStep(3);
-                  }}
-                />
-              )}
-              {step === 3 && <Step3 characterId={characterId} phone={authPhone} />}
+                      setStep(1);
+                    }}
+                  />
+                )}
+                {step === 1 && (
+                  <Step1
+                    phone={authPhone}
+                    onDone={() => setStep(2)}
+                  />
+                )}
+                {step === 2 && (
+                  <Step2
+                    authPhone={authPhone}
+                    onDone={(cid) => {
+                      setCharacterId(cid);
+                      setStep(3);
+                    }}
+                  />
+                )}
+                {step === 3 && <Step3 characterId={characterId} phone={authPhone} />}
+              </div>
             </div>
           </div>
         </div>
