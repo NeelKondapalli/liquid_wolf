@@ -450,8 +450,8 @@ export default function LandingPage() {
 
       {/* Content layer — pointer-events-none so mouse passes through to ASCII canvas */}
       <div className="relative z-10 min-h-screen flex flex-col pointer-events-none">
-        {/* Main content — centered vertically */}
-        <div className="flex-1 flex items-center justify-center px-5 sm:px-8 py-10 sm:py-16">
+        {/* Main content — pushed below center to avoid video bright areas at top */}
+        <div className="flex-1 flex items-end justify-center px-5 sm:px-8 pb-16 sm:pb-24 pt-10 sm:pt-16">
           <div className="w-full max-w-[960px] flex flex-col lg:flex-row items-center lg:items-center gap-10 sm:gap-12 lg:gap-24">
 
             {/* Left — hero copy */}

@@ -1,4 +1,5 @@
 import { getToken, setToken } from "./auth";
+import { supabase } from "./supabase";
 import type {
   User,
   AccountSummary,
@@ -47,10 +48,9 @@ export const api = {
       await delay();
       return { success: true };
     }
-    return apiFetch("/auth/send-code", {
-      method: "POST",
-      body: JSON.stringify({ phone }),
-    });
+    const { error } = await supabase.auth.signInWithOtp({ phone });
+    if (error) throw new Error(error.message);
+    return { success: true };
   },
 
   verifyCode: async (
@@ -64,12 +64,26 @@ export const api = {
       setToken(token);
       return { access_token: token };
     }
-    const data = await apiFetch<{ access_token: string }>("/auth/verify", {
-      method: "POST",
-      body: JSON.stringify({ phone, code }),
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone,
+      token: code,
+      type: "sms",
     });
-    setToken(data.access_token);
-    return data;
+    if (error) throw new Error(error.message);
+    const accessToken = data.session?.access_token;
+    if (!accessToken) throw new Error("No session returned");
+    setToken(accessToken);
+
+    // Upsert user profile in our users table
+    const userId = data.user?.id;
+    if (userId) {
+      await supabase.from("users").upsert(
+        { id: userId, phone },
+        { onConflict: "id" }
+      );
+    }
+
+    return { access_token: accessToken };
   },
 
   saveKeys: async (

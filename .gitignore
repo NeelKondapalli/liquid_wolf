@@ -19,6 +19,7 @@ out/
 
 # production
 build/
+dist/
 
 # misc
 .DS_Store
@@ -30,10 +31,19 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files — .env.local has secrets/overrides, never commit it.
-# .env, .env.development, .env.production are committed (no secrets).
+# ─── Secrets & private env files ─────────────────────────────
+# Local override files (may contain real keys)
 .env.local
 .env*.local
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Supabase service role key (never commit)
+# Use: export SUPABASE_SERVICE_ROLE_KEY='...' in your shell
 
 # vercel
 .vercel
@@ -41,3 +51,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

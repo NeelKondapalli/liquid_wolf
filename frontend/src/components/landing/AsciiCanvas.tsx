@@ -17,7 +17,8 @@ export function AsciiCanvas() {
           isPlaying={true}
           enableMouse={true}
           trailLength={24}
-          enableRipple={false}
+          enableRipple={true}
+          rippleSpeed={40}
           charset="detailed"
           className="w-full h-full"
         />
