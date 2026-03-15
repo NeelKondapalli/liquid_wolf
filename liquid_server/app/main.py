@@ -10,6 +10,7 @@ from app.routers.account import account_bp
 from app.routers.orders import orders_bp
 from app.routers.positions import positions_bp
 from app.routers.user import user_bp
+from app.routers.vapi import vapi_bp
 from app.services.supabase_service import supabase_service
 
 
@@ -20,7 +21,7 @@ def create_app():
     app.config.from_object(Config)
 
     # Enable CORS
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, resources={r"/api/*": {"origins": "*"}, r"/vapi/*": {"origins": "*"}})
 
     # Register blueprints
     app.register_blueprint(user_bp)
@@ -28,6 +29,7 @@ def create_app():
     app.register_blueprint(account_bp)
     app.register_blueprint(orders_bp)
     app.register_blueprint(positions_bp)
+    app.register_blueprint(vapi_bp)
 
     # Health check endpoint
     @app.route("/health", methods=["GET"])
@@ -87,7 +89,8 @@ def create_app():
                 "market_data": "/api/v1/market/*",
                 "account": "/api/v1/account/*",
                 "orders": "/api/v1/orders/*",
-                "positions": "/api/v1/positions/*"
+                "positions": "/api/v1/positions/*",
+                "vapi": "/vapi/* (VAPI-compliant tool endpoints)"
             },
             "documentation": "See API_REFERENCE.md for complete API documentation"
         }), 200
@@ -125,7 +128,7 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    # Get port from environment or use 8000
+    # Get port from environment or use 8001
     port = int(os.getenv("PORT", "8001"))
     app.run(
         host="0.0.0.0",

@@ -1,6 +1,7 @@
 """
 Liquid API service wrapper
 """
+import logging
 from liquidtrading import LiquidClient
 from liquidtrading.errors import (
     LiquidError,
@@ -17,6 +18,10 @@ from liquidtrading.errors import (
 from typing import Any, Dict, Optional, List
 from app.core.config import Config
 
+# Set up logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 
 class LiquidService:
     """Service for interacting with Liquid Trading API"""
@@ -29,6 +34,13 @@ class LiquidService:
             api_key: User's Liquid API key
             api_secret: User's Liquid API secret
         """
+        logger.info("="*60)
+        logger.info("LIQUID CLIENT INITIALIZATION")
+        logger.info(f"API Key (first 10 chars): {api_key[:10]}...")
+        logger.info(f"API Secret (first 10 chars): {api_secret[:10]}...")
+        logger.info(f"Base URL: {Config.LIQUID_BASE_URL}")
+        logger.info("="*60)
+
         self.client = LiquidClient(
             api_key=api_key,
             api_secret=api_secret,
@@ -117,15 +129,25 @@ class LiquidService:
 
     def get_account(self) -> Dict[str, Any]:
         """Get account information"""
+        logger.info("="*60)
+        logger.info("LIQUID API - GET ACCOUNT")
+
         try:
             account = self.client.get_account()
-            return {
+            result = {
                 "equity": account.equity,
                 "margin_used": account.margin_used,
                 "available_balance": account.available_balance,
                 "account_value": account.account_value,
             }
+
+            logger.info(f"SUCCESS - Response: {result}")
+            logger.info("="*60)
+            return result
+
         except LiquidError as e:
+            logger.error(f"LIQUID API ERROR - {type(e).__name__}: {str(e)}")
+            logger.info("="*60)
             raise self._handle_liquid_error(e)
 
     def get_balances(self) -> Dict[str, Any]:
@@ -152,9 +174,12 @@ class LiquidService:
 
     def get_positions(self) -> List[Dict[str, Any]]:
         """Get all open positions"""
+        logger.info("="*60)
+        logger.info("LIQUID API - GET POSITIONS")
+
         try:
             positions = self.client.get_positions()
-            return [
+            result = [
                 {
                     "symbol": pos.symbol,
                     "side": pos.side,
@@ -168,7 +193,15 @@ class LiquidService:
                 }
                 for pos in positions
             ]
+
+            logger.info(f"SUCCESS - Found {len(result)} positions")
+            logger.info(f"Response: {result}")
+            logger.info("="*60)
+            return result
+
         except LiquidError as e:
+            logger.error(f"LIQUID API ERROR - {type(e).__name__}: {str(e)}")
+            logger.info("="*60)
             raise self._handle_liquid_error(e)
 
     # ========================================================================
@@ -189,6 +222,10 @@ class LiquidService:
         reduce_only: bool = False,
     ) -> Dict[str, Any]:
         """Place a new order"""
+        logger.info("="*60)
+        logger.info("LIQUID API - PLACE ORDER")
+        logger.info(f"Arguments: symbol={symbol}, side={side}, size={size}, type={type}, price={price}, leverage={leverage}, tif={time_in_force}, tp={tp}, sl={sl}, reduce_only={reduce_only}")
+
         try:
             order = self.client.place_order(
                 symbol=symbol,
@@ -202,7 +239,8 @@ class LiquidService:
                 sl=sl,
                 reduce_only=reduce_only,
             )
-            return {
+
+            response = {
                 "order_id": order.order_id,
                 "symbol": order.symbol,
                 "side": order.side,
@@ -217,14 +255,25 @@ class LiquidService:
                 "reduce_only": order.reduce_only,
                 "created_at": order.created_at,
             }
+
+            logger.info(f"SUCCESS - Response: {response}")
+            logger.info("="*60)
+            return response
+
         except LiquidError as e:
+            logger.error(f"LIQUID API ERROR - {type(e).__name__}: {str(e)}")
+            logger.info("="*60)
             raise self._handle_liquid_error(e)
 
     def get_open_orders(self) -> List[Dict[str, Any]]:
         """Get all open orders"""
+        logger.info("="*60)
+        logger.info("LIQUID API - GET OPEN ORDERS")
+
         try:
             orders = self.client.get_open_orders()
-            return [
+
+            result = [
                 {
                     "order_id": order.order_id,
                     "symbol": order.symbol,
@@ -236,7 +285,15 @@ class LiquidService:
                 }
                 for order in orders
             ]
+
+            logger.info(f"SUCCESS - Found {len(result)} open orders")
+            logger.info(f"Response: {result}")
+            logger.info("="*60)
+            return result
+
         except LiquidError as e:
+            logger.error(f"LIQUID API ERROR - {type(e).__name__}: {str(e)}")
+            logger.info("="*60)
             raise self._handle_liquid_error(e)
 
     def get_order(self, order_id: str) -> Dict[str, Any]:
